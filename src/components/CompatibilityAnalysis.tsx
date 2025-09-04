@@ -18,35 +18,35 @@ interface TransportRecommendation {
   separation: string[];
 }
 
+type TravelTime = 'early_morning' | 'daytime' | 'evening' | 'night';
+
 interface CompatibilityAnalysisProps {
   vegetables: Vegetable[];
+  bestTravelTime?: TravelTime;
+  onChangeBestTravelTime?: (value: TravelTime) => void;
 }
 
 // Compatibility logic based on ethylene production/sensitivity and temperature requirements
 function analyzeCompatibility(vegetables: Vegetable[]): CompatibilityResult[] {
   const results: CompatibilityResult[] = [];
-  
+
   for (let i = 0; i < vegetables.length; i++) {
     for (let j = i + 1; j < vegetables.length; j++) {
       const veg1 = vegetables[i];
       const veg2 = vegetables[j];
-      
+
       // Check ethylene compatibility
-      const ethyleneConflict = (
+      const ethyleneConflict =
         (veg1.ethyleneProduction === 'high' && veg2.ethyleneSensitivity === 'high') ||
-        (veg2.ethyleneProduction === 'high' && veg1.ethyleneSensitivity === 'high')
-      );
-      
+        (veg2.ethyleneProduction === 'high' && veg1.ethyleneSensitivity === 'high');
+
       // Check temperature compatibility (must overlap)
-      const tempConflict = (
-        veg1.idealTemp.max < veg2.idealTemp.min || 
-        veg2.idealTemp.max < veg1.idealTemp.min
-      );
-      
+      const tempConflict = veg1.idealTemp.max < veg2.idealTemp.min || veg2.idealTemp.max < veg1.idealTemp.min;
+
       let compatible = true;
       let reason = 'Compatible for transport';
       let severity: 'low' | 'medium' | 'high' = 'low';
-      
+
       if (ethyleneConflict && tempConflict) {
         compatible = false;
         reason = 'Ethylene conflict + temperature mismatch';
@@ -60,16 +60,11 @@ function analyzeCompatibility(vegetables: Vegetable[]): CompatibilityResult[] {
         reason = 'Incompatible temperature requirements';
         severity = 'medium';
       }
-      
-      results.push({
-        pair: `${veg1.name} + ${veg2.name}`,
-        compatible,
-        reason,
-        severity
-      });
+
+      results.push({ pair: `${veg1.name} + ${veg2.name}`, compatible, reason, severity });
     }
   }
-  
+
   return results;
 }
 
@@ -81,36 +76,35 @@ function getTransportRecommendation(vegetables: Vegetable[]): TransportRecommend
       temperature: { min: 10, max: 15 },
       humidity: '85-90%',
       ventilation: true,
-      separation: []
+      separation: [],
     };
   }
-  
+
   // Find temperature range that works for all vegetables
-  const minTemp = Math.max(...vegetables.map(v => v.idealTemp.min));
-  const maxTemp = Math.min(...vegetables.map(v => v.idealTemp.max));
-  
+  const minTemp = Math.max(...vegetables.map((v) => v.idealTemp.min));
+  const maxTemp = Math.min(...vegetables.map((v) => v.idealTemp.max));
+
   // Check for high ethylene producers that need separation
-  const highEthyleneProducers = vegetables.filter(v => v.ethyleneProduction === 'high');
-  const highEthyleneSensitive = vegetables.filter(v => v.ethyleneSensitivity === 'high');
-  
+  const highEthyleneProducers = vegetables.filter((v) => v.ethyleneProduction === 'high');
+  const highEthyleneSensitive = vegetables.filter((v) => v.ethyleneSensitivity === 'high');
+
   const needsSeparation = highEthyleneProducers.length > 0 && highEthyleneSensitive.length > 0;
-  
+
   return {
     type: minTemp <= 4 ? 'refrigerated' : 'controlled_atmosphere',
     temperature: { min: Math.max(0, minTemp), max: maxTemp > minTemp ? maxTemp : minTemp + 2 },
     humidity: '85-95%',
     ventilation: true,
-    separation: needsSeparation ? [
-      `Separate: ${highEthyleneProducers.map(v => v.name).join(', ')}`,
-      `From: ${highEthyleneSensitive.map(v => v.name).join(', ')}`
-    ] : []
+    separation: needsSeparation
+      ? [`Separate: ${highEthyleneProducers.map((v) => v.name).join(', ')}`, `From: ${highEthyleneSensitive.map((v) => v.name).join(', ')}`]
+      : [],
   };
 }
 
-export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps) {
+export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morning', onChangeBestTravelTime }: CompatibilityAnalysisProps) {
   const compatibilityResults = analyzeCompatibility(vegetables);
   const transportRec = getTransportRecommendation(vegetables);
-  
+
   if (vegetables.length === 0) {
     return (
       <Card className="p-6">
@@ -118,7 +112,7 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
       </Card>
     );
   }
-  
+
   if (vegetables.length === 1) {
     return (
       <Card className="p-6">
@@ -139,16 +133,19 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
           <AlertTriangle className="w-5 h-5" />
           Compatibility Analysis
         </h3>
-        
+
         <div className="space-y-3">
           {compatibilityResults.map((result, index) => (
-            <div key={index} className={`flex items-center justify-between p-3 rounded-lg border ${
-              result.compatible 
-                ? 'bg-compatible-green/10 border-compatible-green/20' 
-                : result.severity === 'high'
-                ? 'bg-incompatible-red/10 border-incompatible-red/20'
-                : 'bg-warning-orange-light border-warning-orange/20'
-            }`}>
+            <div
+              key={index}
+              className={`flex items-center justify-between p-3 rounded-lg border ${
+                result.compatible
+                  ? 'bg-compatible-green/10 border-compatible-green/20'
+                  : result.severity === 'high'
+                  ? 'bg-incompatible-red/10 border-incompatible-red/20'
+                  : 'bg-warning-orange-light border-warning-orange/20'
+              }`}
+            >
               <div className="flex items-center gap-3">
                 {result.compatible ? (
                   <CheckCircle className="w-5 h-5 text-compatible-green" />
@@ -159,8 +156,8 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">{result.reason}</span>
-                <Badge variant={result.compatible ? "default" : "destructive"}>
-                  {result.compatible ? "Compatible" : "Incompatible"}
+                <Badge variant={result.compatible ? 'default' : 'destructive'}>
+                  {result.compatible ? 'Compatible' : 'Incompatible'}
                 </Badge>
               </div>
             </div>
@@ -174,7 +171,7 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
           <Truck className="w-5 h-5" />
           Transport Recommendations
         </h3>
-        
+
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -184,13 +181,13 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
                 {transportRec.temperature.min}°C - {transportRec.temperature.max}°C
               </span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium">Humidity:</span>
               <span className="text-sm text-muted-foreground">{transportRec.humidity}</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium">Truck Type:</span>
@@ -198,11 +195,30 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
                 {transportRec.type.replace('_', ' ').toUpperCase()}
               </Badge>
             </div>
+
+            {/* Best Time to Travel control */}
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Best Time to Travel:</span>
+              <select
+                className="ml-2 text-sm border rounded-md p-1 bg-background"
+                value={bestTravelTime}
+                onChange={(e) => onChangeBestTravelTime?.(e.target.value as TravelTime)}
+              >
+                <option value="early_morning">Early Morning</option>
+                <option value="daytime">Daytime</option>
+                <option value="evening">Evening</option>
+                <option value="night">Night</option>
+              </select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Cooler periods (early morning/night) reduce heat stress and may lower spoilage risk.
+            </p>
           </div>
-          
+
           {transportRec.separation.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-warning-orange">⚠️ Separation Required:</h4>
+              <h4 className="text-sm font-medium text-warning-orange">Separation Required:</h4>
               {transportRec.separation.map((instruction, index) => (
                 <p key={index} className="text-xs text-muted-foreground bg-warning-orange-light p-2 rounded">
                   {instruction}
@@ -215,3 +231,4 @@ export function CompatibilityAnalysis({ vegetables }: CompatibilityAnalysisProps
     </div>
   );
 }
+

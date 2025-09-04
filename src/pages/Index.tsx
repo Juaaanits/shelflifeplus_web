@@ -9,10 +9,28 @@ import { TruckVisualizer } from '@/components/TruckVisualizer';
 import { ImpactMetrics } from '@/components/ImpactMetrics';
 import heroImage from '@/assets/hero-filipino-farmers.jpg';
 
+// Planning parameters types
+type TruckType = 'ambient' | 'refrigerated' | 'ventilated';
+type TruckSize = 'small' | 'medium' | 'large';
+type TravelTime = 'early_morning' | 'daytime' | 'evening' | 'night';
+
+interface ScenarioMeta {
+  truckType: TruckType;
+  truckSize: TruckSize;
+  truckQuantity: number;
+  bestTravelTime: TravelTime;
+}
+
 const Index = () => {
   const [vegetables, setVegetables] = useState<Vegetable[]>([]);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'layout' | 'impact'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'trucks' | 'analysis' | 'layout' | 'impact'>('input');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [meta, setMeta] = useState<ScenarioMeta>({
+    truckType: 'refrigerated',
+    truckSize: 'medium',
+    truckQuantity: 1,
+    bestTravelTime: 'early_morning',
+  });
 
   const handleVegetablesChange = (newVegetables: Vegetable[]) => {
     setVegetables(newVegetables);
@@ -23,6 +41,9 @@ const Index = () => {
   };
 
   const getTotalQuantity = () => vegetables.reduce((sum, veg) => sum + veg.quantity, 0);
+  const capacityBySize: Record<TruckSize, number> = { small: 100, medium: 200, large: 400 };
+  const getTotalCapacity = () => capacityBySize[meta.truckSize] * Math.max(1, meta.truckQuantity);
+  const utilization = Math.round((getTotalQuantity() / Math.max(1, getTotalCapacity())) * 100);
   
   const getCompatibilityStatus = () => {
     if (vegetables.length < 2) return { status: 'neutral', text: 'Add more vegetables' };
@@ -67,8 +88,16 @@ const Index = () => {
       const s = params.get('s');
       if (s) {
         const decoded = JSON.parse(atob(s));
+        // Backward compatible: old links store array only
         if (Array.isArray(decoded)) {
           setVegetables(decoded);
+          setActiveTab('analysis');
+          return;
+        }
+        // New format: { vegetables, meta }
+        if (decoded && Array.isArray(decoded.vegetables)) {
+          setVegetables(decoded.vegetables);
+          if (decoded.meta) setMeta((prev) => ({ ...prev, ...decoded.meta }));
           setActiveTab('analysis');
           return;
         }
@@ -81,7 +110,13 @@ const Index = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setVegetables(parsed);
+        if (Array.isArray(parsed)) {
+          // Backward compatible local save
+          setVegetables(parsed);
+        } else if (parsed && Array.isArray(parsed.vegetables)) {
+          setVegetables(parsed.vegetables);
+          if (parsed.meta) setMeta((prev) => ({ ...prev, ...parsed.meta }));
+        }
       }
     } catch (e) {
       // ignore storage errors
@@ -91,15 +126,18 @@ const Index = () => {
   // Persist scenario on change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(vegetables));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ vegetables, meta })
+      );
     } catch (e) {
       // ignore storage errors
     }
-  }, [vegetables]);
+  }, [vegetables, meta]);
 
   const shareScenario = () => {
     try {
-      const s = btoa(JSON.stringify(vegetables));
+      const s = btoa(JSON.stringify({ vegetables, meta }));
       // Clean base URL (no existing query/hash), add share param and jump hash
       const url = new URL(window.location.origin + window.location.pathname);
       url.searchParams.set('s', s);
@@ -118,6 +156,12 @@ const Index = () => {
 
   const resetScenario = () => {
     setVegetables([]);
+    setMeta({
+      truckType: 'refrigerated',
+      truckSize: 'medium',
+      truckQuantity: 1,
+      bestTravelTime: 'early_morning',
+    });
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (e) {
@@ -431,7 +475,7 @@ const Index = () => {
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'input', label: 'Add Vegetables', icon: Leaf },
-                { id: 'input', label: 'Add Trucks', icon: Leaf },
+                { id: 'trucks', label: 'Add Trucks', icon: Truck },
                 { id: 'analysis', label: 'Compatibility', icon: AlertCircle },
                 { id: 'layout', label: 'Truck Layout', icon: Truck },
                 { id: 'impact', label: 'Impact Analysis', icon: BarChart3 }
@@ -483,11 +527,69 @@ const Index = () => {
                       ))}
                     </div>
                   </Card>
+
+                  
                 </div>
               </div>
             )}
-            
-            {activeTab === 'analysis' && <CompatibilityAnalysis vegetables={vegetables} />}
+
+            {activeTab === 'trucks' && (
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Planning Parameters</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-1">Truck Type</label>
+                        <select
+                          className="w-full border rounded-md p-2 bg-background"
+                          value={meta.truckType}
+                          onChange={(e) => setMeta((m) => ({ ...m, truckType: e.target.value as any }))}
+                        >
+                          <option value="ambient">Ambient</option>
+                          <option value="refrigerated">Refrigerated</option>
+                          <option value="ventilated">Ventilated</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-1">Truck Size</label>
+                        <select
+                          className="w-full border rounded-md p-2 bg-background"
+                          value={meta.truckSize}
+                          onChange={(e) => setMeta((m) => ({ ...m, truckSize: e.target.value as any }))}
+                        >
+                          <option value="small">Small</option>
+                          <option value="medium">Medium</option>
+                          <option value="large">Large</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-1">Truck Quantity</label>
+                        <input
+                          type="number"
+                          min={1}
+                          className="w-full border rounded-md p-2 bg-background"
+                          value={meta.truckQuantity}
+                          onChange={(e) =>
+                            setMeta((m) => ({ ...m, truckQuantity: Math.max(1, Number(e.target.value || 1)) }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 text-sm text-muted-foreground">
+                      Capacity: {getTotalCapacity()} units • Utilization: {isFinite(utilization) ? utilization : 0}%
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            )}
+            {activeTab === 'analysis' && (
+              <CompatibilityAnalysis
+                vegetables={vegetables}
+                bestTravelTime={meta.bestTravelTime}
+                onChangeBestTravelTime={(val) => setMeta((m) => ({ ...m, bestTravelTime: val }))}
+              />
+            )}
             {activeTab === 'layout' && <TruckVisualizer vegetables={vegetables} />}
             {activeTab === 'impact' && <ImpactMetrics vegetables={vegetables} />}
           </div>
