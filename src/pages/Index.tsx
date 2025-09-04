@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Leaf, BarChart3, Truck, AlertCircle, Menu, X, ArrowRight, CheckCircle, Shield, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Leaf, BarChart3, Truck, AlertCircle, Menu, X, ArrowRight, CheckCircle, Shield, Zap, Sprout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,81 @@ const Index = () => {
     document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const scrollToFeatures = () => {
+    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Scenario persistence and sharing
+  const STORAGE_KEY = 'shelflife:scenario';
+
+  // On mount: load from share URL param or localStorage
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get('s');
+      if (s) {
+        const decoded = JSON.parse(atob(s));
+        if (Array.isArray(decoded)) {
+          setVegetables(decoded);
+          setActiveTab('analysis');
+          return;
+        }
+      }
+    } catch (e) {
+      // ignore malformed share links
+    }
+
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setVegetables(parsed);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, []);
+
+  // Persist scenario on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vegetables));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [vegetables]);
+
+  const shareScenario = () => {
+    try {
+      const s = btoa(JSON.stringify(vegetables));
+      // Clean base URL (no existing query/hash), add share param and jump hash
+      const url = new URL(window.location.origin + window.location.pathname);
+      url.searchParams.set('s', s);
+      url.hash = 'demo-section';
+      const shareUrl = url.toString();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl);
+        alert('Shareable link copied to clipboard!');
+      } else {
+        prompt('Copy this shareable link:', shareUrl);
+      }
+    } catch (e) {
+      alert('Could not create share link.');
+    }
+  };
+
+  const resetScenario = () => {
+    setVegetables([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
+    // Restore to clean base URL without query or hash
+    const clean = new URL(window.location.origin + window.location.pathname);
+    window.history.replaceState({}, '', clean);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Professional Mobile Header - Enlarged */}
@@ -62,18 +137,18 @@ const Index = () => {
             {/* Logo - Enhanced with tagline */}
             <div className="flex items-center gap-4">
               <div className="p-3 bg-brand-forest rounded-xl shadow-md">
-                <Leaf className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <img 
+                  src="/transparent.svg" 
+                  alt="ShelfLife+ Logo" 
+                  className="w-6 h-6 sm:w-7 sm:h-7 object-contain"
+                />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-brand-forest font-work-sans">S+</span>
-                  <span className="text-xs bg-brand-forest/10 text-brand-forest px-2 py-1 rounded-full font-medium">MVP</span>
+                  <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-brand-forest font-work-sans">SHELFLIFE+</span>
                 </div>
-                <p className="text-sm sm:text-base text-brand-teal font-medium tagline hidden sm:block">
+                <p className="text-sm sm:text-base text-brand-teal font-medium tagline hidden sm:block italic">
                   Smarter Transport, Fresher Harvests
-                </p>
-                <p className="text-xs text-muted-foreground hidden lg:block">
-                  AI-powered logistics for Philippine agriculture
                 </p>
               </div>
             </div>
@@ -91,7 +166,7 @@ const Index = () => {
             {/* Mobile CTA + Menu */}
             <div className="flex items-center gap-2 lg:hidden">
                 <Button 
-                onClick={scrollToDemo} 
+                onClick={scrollToFeatures}
                 size="sm"
                 className="bg-brand-forest hover:bg-brand-teal text-white px-4 py-2 text-sm font-semibold"
               >
@@ -159,8 +234,8 @@ const Index = () => {
             <div className="text-white space-y-6 sm:space-y-8 text-center lg:text-left">
               <div className="space-y-4 sm:space-y-6">
                 <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                  <Zap className="w-4 h-4" />
-                  <span>MVP for Philippine Market</span>
+                  <Sprout className="w-4 h-4" />
+                  <span>Innovation Rooted in Agriculture</span>
                 </div>
                 
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight font-work-sans">
@@ -168,7 +243,7 @@ const Index = () => {
                   <span className="block text-white/90">Waste by 40%</span>
                 </h1>
                 
-                <p className="text-xl sm:text-2xl text-white font-medium leading-relaxed max-w-xl mx-auto lg:mx-0 tagline">
+                <p className="text-xl sm:text-2xl text-white font-medium leading-relaxed max-w-xl mx-auto lg:mx-0 tagline sm:block italic">
                   Smarter Transport, Fresher Harvests
                 </p>
                 
@@ -188,12 +263,13 @@ const Index = () => {
                   Try Demo Free <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button 
-                  variant="outline" 
+                  onClick={scrollToFeatures}
                   size="lg"
-                  className="border-2 border-white text-white hover:bg-white/10 backdrop-blur-sm w-full sm:w-auto"
+                  className="bg-white text-brand-forest hover:bg-white/90 font-semibold shadow-lg w-full sm:w-auto"
                 >
                   View Features
                 </Button>
+
               </div>
 
               {/* Features badges - Mobile friendly */}
@@ -339,6 +415,12 @@ const Index = () => {
                   <BarChart3 className="w-5 h-5 text-fresh-green" />
                   <span className="text-sm text-muted-foreground">Powered by</span>
                   <span className="font-semibold text-fresh-green">AgriScience</span>
+                  <Button variant="outline" size="sm" onClick={shareScenario} className="ml-2">
+                    Share
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={resetScenario}>
+                    Reset
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -349,6 +431,7 @@ const Index = () => {
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'input', label: 'Add Vegetables', icon: Leaf },
+                { id: 'input', label: 'Add Trucks', icon: Leaf },
                 { id: 'analysis', label: 'Compatibility', icon: AlertCircle },
                 { id: 'layout', label: 'Truck Layout', icon: Truck },
                 { id: 'impact', label: 'Impact Analysis', icon: BarChart3 }
@@ -416,7 +499,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Why Choose ShelfLife+?
+              Why Choose SHELFLIFE+?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Transform your vegetable logistics with science-backed optimization
@@ -476,9 +559,8 @@ const Index = () => {
                   Try Free Demo <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button 
-                  variant="outline" 
                   size="lg"
-                  className="w-full border-white text-white hover:bg-white/10"
+                  className="w-full bg-white text-fresh-green hover:bg-white/90 font-semibold"
                 >
                   Contact Sales
                 </Button>
@@ -499,20 +581,23 @@ const Index = () => {
                   <Leaf className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-xl font-bold">ShelfLife+</span>
-                  <span className="text-xs text-muted ml-2">Beta</span>
+                  <span className="text-xl font-bold">SHELFLIFE+</span>
                 </div>
               </div>
               <p className="text-muted mb-6 max-w-md">
                 Revolutionizing vegetable logistics through science-based compatibility 
                 checking and optimized transport planning.
               </p>
+              {/*
               <div className="flex gap-4">
                 <Button variant="outline" size="sm" className="border-muted text-muted hover:bg-muted hover:text-foreground">
                   Download App
                 </Button>
               </div>
+              */}
             </div>
+
+            
 
             {/* Quick Links */}
             <div>
