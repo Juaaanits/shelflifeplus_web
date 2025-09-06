@@ -4,6 +4,8 @@ import { Vegetable } from './VegetableInput';
 
 interface TruckVisualizerProps {
   vegetables: Vegetable[];
+  truckType?: 'ambient' | 'refrigerated' | 'ventilated';
+  truckSize?: 'small' | 'medium' | 'large';
 }
 
 interface LoadZone {
