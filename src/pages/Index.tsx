@@ -318,6 +318,9 @@ const Index = () => {
       truckSize: 'medium',
       truckQuantity: 1,
       bestTravelTime: 'early_morning',
+      autoTruckQuantity: true,
+      routeDurationHours: 3,
+      ambientDeltaC: 4,
     });
     try {
       localStorage.removeItem(STORAGE_KEY);
