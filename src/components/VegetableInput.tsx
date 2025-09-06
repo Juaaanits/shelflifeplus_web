@@ -14,27 +14,36 @@ export interface Vegetable {
 }
 
 // Vegetable database with biological properties
+// Vegetable database with biological properties (dummy data)
 const VEGETABLE_DATABASE: Record<string, Omit<Vegetable, 'id' | 'quantity'>> = {
-  'Tomatoes': {
-    name: 'Tomatoes',
-    ethyleneProduction: 'high',
+  // --- Highland Vegetables ---
+  'Carrots': {
+    name: 'Carrots',
+    ethyleneProduction: 'low',
     ethyleneSensitivity: 'medium',
-    idealTemp: { min: 12, max: 15 },
+    idealTemp: { min: 0, max: 2 },
+    shelfLife: 21
+  },
+  'Cabbage': {
+    name: 'Cabbage',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'medium',
+    idealTemp: { min: 0, max: 2 },
+    shelfLife: 20
+  },
+  'Broccoli': {
+    name: 'Broccoli',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'high',
+    idealTemp: { min: 0, max: 2 },
     shelfLife: 7
   },
-  'Bananas': {
-    name: 'Bananas',
-    ethyleneProduction: 'high',
+  'Cauliflower': {
+    name: 'Cauliflower',
+    ethyleneProduction: 'low',
     ethyleneSensitivity: 'high',
-    idealTemp: { min: 13, max: 15 },
-    shelfLife: 5
-  },
-  'Apples': {
-    name: 'Apples',
-    ethyleneProduction: 'medium',
-    ethyleneSensitivity: 'low',
-    idealTemp: { min: 0, max: 4 },
-    shelfLife: 30
+    idealTemp: { min: 0, max: 2 },
+    shelfLife: 10
   },
   'Lettuce': {
     name: 'Lettuce',
@@ -43,13 +52,80 @@ const VEGETABLE_DATABASE: Record<string, Omit<Vegetable, 'id' | 'quantity'>> = {
     idealTemp: { min: 0, max: 2 },
     shelfLife: 10
   },
-  'Carrots': {
-    name: 'Carrots',
+  'Celery': {
+    name: 'Celery',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'high',
+    idealTemp: { min: 0, max: 2 },
+    shelfLife: 14
+  },
+  'Chinese cabbage': {
+    name: 'Chinese cabbage',
     ethyleneProduction: 'low',
     ethyleneSensitivity: 'medium',
     idealTemp: { min: 0, max: 2 },
-    shelfLife: 21
+    shelfLife: 14
   },
+
+  // --- Lowland Vegetables ---
+  'Eggplant': {
+    name: 'Eggplant',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'high',
+    idealTemp: { min: 10, max: 12 },
+    shelfLife: 7
+  },
+  'Tomatoes': {
+    name: 'Tomatoes',
+    ethyleneProduction: 'high',
+    ethyleneSensitivity: 'medium',
+    idealTemp: { min: 12, max: 15 },
+    shelfLife: 7
+  },
+  'Okra': {
+    name: 'Okra',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'high',
+    idealTemp: { min: 7, max: 10 },
+    shelfLife: 5
+  },
+  'Ampalaya': {
+    name: 'Ampalaya',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'medium',
+    idealTemp: { min: 10, max: 12 },
+    shelfLife: 5
+  },
+  'Sitaw': {
+    name: 'Sitaw',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'high',
+    idealTemp: { min: 7, max: 10 },
+    shelfLife: 5
+  },
+  'Patola': {
+    name: 'Patola',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'medium',
+    idealTemp: { min: 10, max: 12 },
+    shelfLife: 7
+  },
+  'Kalabasa': {
+    name: 'Kalabasa',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'low',
+    idealTemp: { min: 10, max: 12 },
+    shelfLife: 30
+  },
+  'Pechay': {
+    name: 'Pechay',
+    ethyleneProduction: 'low',
+    ethyleneSensitivity: 'medium',
+    idealTemp: { min: 0, max: 2 },
+    shelfLife: 7
+  },
+
+  // --- Retained from original ---
   'Potatoes': {
     name: 'Potatoes',
     ethyleneProduction: 'low',
@@ -70,13 +146,6 @@ const VEGETABLE_DATABASE: Record<string, Omit<Vegetable, 'id' | 'quantity'>> = {
     ethyleneSensitivity: 'medium',
     idealTemp: { min: 7, max: 10 },
     shelfLife: 14
-  },
-  'Broccoli': {
-    name: 'Broccoli',
-    ethyleneProduction: 'low',
-    ethyleneSensitivity: 'high',
-    idealTemp: { min: 0, max: 2 },
-    shelfLife: 7
   }
 };
 
