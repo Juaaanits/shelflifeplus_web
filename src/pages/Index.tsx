@@ -34,10 +34,6 @@ const Index = () => {
 
   const handleVegetablesChange = (newVegetables: Vegetable[]) => {
     setVegetables(newVegetables);
-    // Auto-advance to analysis tab when vegetables are added
-    if (newVegetables.length > 0 && activeTab === 'input') {
-      setActiveTab('analysis');
-    }
   };
 
   const getTotalQuantity = () => vegetables.reduce((sum, veg) => sum + veg.quantity, 0);
