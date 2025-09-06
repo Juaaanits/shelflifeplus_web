@@ -332,8 +332,91 @@ const Index = () => {
     window.history.replaceState({}, '', clean);
   };
 
+  // Event bridge from TraceBot (chat)
+  useEffect(() => {
+    const navigate = (e: any) => {
+      const tab = e?.detail?.tab as typeof activeTab | undefined;
+      if (tab) {
+        // Scroll to simulator section and highlight briefly
+        document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' });
+        setActiveTab(tab);
+        const demo = document.getElementById('demo-section');
+        if (demo) {
+          demo.classList.add('highlight-glow');
+          setTimeout(() => demo.classList.remove('highlight-glow'), 1200);
+        }
+      }
+    };
+    const action = (e: any) => {
+      const t = e?.detail?.type as string | undefined;
+      if (!t) return;
+      if (t === 'addSampleShipment') {
+        // Simple sample preset aligned with MVP
+        const sample: Vegetable[] = [
+          {
+            id: crypto.randomUUID(),
+            name: 'Tomato',
+            quantity: 80,
+            ethyleneProduction: 'high',
+            ethyleneSensitivity: 'low',
+            idealTemp: { min: 10, max: 12 },
+            shelfLife: 7,
+          },
+          {
+            id: crypto.randomUUID(),
+            name: 'Cabbage',
+            quantity: 60,
+            ethyleneProduction: 'low',
+            ethyleneSensitivity: 'medium',
+            idealTemp: { min: 0, max: 4 },
+            shelfLife: 20,
+          },
+          {
+            id: crypto.randomUUID(),
+            name: 'Eggplant',
+            quantity: 40,
+            ethyleneProduction: 'medium',
+            ethyleneSensitivity: 'high',
+            idealTemp: { min: 10, max: 12 },
+            shelfLife: 6,
+          },
+        ];
+        setVegetables(sample);
+        setMeta((m) => ({ ...m, truckType: 'refrigerated', truckSize: 'medium', autoTruckQuantity: true }));
+        setActiveTab('analysis');
+        document.getElementById('demo-section')?.scrollIntoView({ behavior: 'smooth' });
+      } else if (t === 'reset') {
+        resetScenario();
+      } else if (t === 'share') {
+        shareScenario();
+      }
+    };
+    window.addEventListener('tracebot:navigate', navigate as any);
+    window.addEventListener('tracebot:action', action as any);
+    return () => {
+      window.removeEventListener('tracebot:navigate', navigate as any);
+      window.removeEventListener('tracebot:action', action as any);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Sticky Mobile CTA Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur border-t border-border px-4 py-3 flex items-center gap-3">
+        <Button
+          onClick={scrollToDemo}
+          className="flex-1 bg-brand-forest hover:bg-brand-teal text-white font-semibold"
+        >
+          Try Simulator
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => window.dispatchEvent(new CustomEvent('tracebot:open'))}
+          className="font-semibold"
+        >
+          Chat
+        </Button>
+      </div>
       {/* Professional Mobile Header - Enlarged */}
       <nav className="bg-white/95 backdrop-blur-sm border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6">
