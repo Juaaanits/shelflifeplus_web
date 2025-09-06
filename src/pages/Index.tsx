@@ -8,6 +8,8 @@ import { CompatibilityAnalysis } from '@/components/CompatibilityAnalysis';
 import { TruckVisualizer } from '@/components/TruckVisualizer';
 import { ImpactMetrics } from '@/components/ImpactMetrics';
 import heroImage from '@/assets/hero-filipino-farmers.jpg';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from '@/components/ui/use-toast';
 
 // Planning parameters types
 type TruckType = 'ambient' | 'refrigerated' | 'ventilated';
@@ -19,6 +21,9 @@ interface ScenarioMeta {
   truckSize: TruckSize;
   truckQuantity: number;
   bestTravelTime: TravelTime;
+  autoTruckQuantity: boolean;
+  routeDurationHours: number;
+  ambientDeltaC: number;
 }
 
 const Index = () => {
@@ -30,6 +35,9 @@ const Index = () => {
     truckSize: 'medium',
     truckQuantity: 1,
     bestTravelTime: 'early_morning',
+    autoTruckQuantity: true,
+    routeDurationHours: 3,
+    ambientDeltaC: 4,
   });
 
   const handleVegetablesChange = (newVegetables: Vegetable[]) => {
@@ -38,8 +46,9 @@ const Index = () => {
 
   const getTotalQuantity = () => vegetables.reduce((sum, veg) => sum + veg.quantity, 0);
   const capacityBySize: Record<TruckSize, number> = { small: 100, medium: 200, large: 400 };
-  const getTotalCapacity = () => capacityBySize[meta.truckSize] * Math.max(1, meta.truckQuantity);
+  const getTotalCapacity = () => capacityBySize[meta.truckSize] * (meta.autoTruckQuantity ? Math.max(1, Math.ceil(getTotalQuantity() / capacityBySize[meta.truckSize])) : Math.max(1, meta.truckQuantity));
   const utilization = Math.round((getTotalQuantity() / Math.max(1, getTotalCapacity())) * 100);
+  const recommendedTruckCount = Math.max(1, Math.ceil(getTotalQuantity() / capacityBySize[meta.truckSize]));
   
   const getCompatibilityStatus = () => {
     if (vegetables.length < 2) return { status: 'neutral', text: 'Add more vegetables' };
@@ -147,6 +156,158 @@ const Index = () => {
       }
     } catch (e) {
       alert('Could not create share link.');
+    }
+  };
+
+  // Export utilities
+  const exportScenarioCSV = () => {
+    try {
+      const headers = ['Name','Quantity','Ethylene Production','Ethylene Sensitivity','Temp Min (°C)','Temp Max (°C)','Shelf Life (days)'];
+      const rows = vegetables.map(v => [
+        v.name,
+        String(v.quantity),
+        v.ethyleneProduction,
+        v.ethyleneSensitivity,
+        String(v.idealTemp.min),
+        String(v.idealTemp.max),
+        String(v.shelfLife)
+      ]);
+      const csv = [headers, ...rows].map(r => r.map(f => /[",\n]/.test(f) ? '"'+f.replace(/"/g,'""')+'"' : f).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'shelflife_scenario.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Exported', description: 'Scenario downloaded as CSV.' });
+    } catch (e) {
+      toast({ title: 'Export failed', description: 'Could not generate CSV.' });
+    }
+  };
+
+  const copyScenarioJSON = () => {
+    try {
+      const data = { vegetables, meta };
+      const text = JSON.stringify(data, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        toast({ title: 'Copied', description: 'Scenario JSON copied to clipboard.' });
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        toast({ title: 'Copied', description: 'Scenario JSON copied to clipboard.' });
+      }
+    } catch (e) {
+      toast({ title: 'Copy failed', description: 'Could not copy JSON.' });
+    }
+  };
+
+  const exportScenarioPDF = () => {
+    try {
+      const travelTimeLabel = (t: TravelTime) =>
+        t === 'early_morning' ? 'Early Morning' : t === 'daytime' ? 'Daytime' : t === 'evening' ? 'Evening' : 'Night';
+      const date = new Date().toLocaleString();
+      const rows = vegetables
+        .map(
+          (v) => `
+            <tr>
+              <td>${v.name}</td>
+              <td class="num">${v.quantity}</td>
+              <td>${v.ethyleneProduction}</td>
+              <td>${v.ethyleneSensitivity}</td>
+              <td>${v.idealTemp.min}–${v.idealTemp.max} °C</td>
+              <td class="num">${v.shelfLife}</td>
+            </tr>`
+        )
+        .join('');
+      const html = `<!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>ShelfLife+ Scenario Summary</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #0a0a0a; margin: 32px; }
+            h1 { margin: 0 0 4px; font-size: 22px; }
+            h2 { margin: 24px 0 8px; font-size: 16px; }
+            .muted { color: #666; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px; font-size: 12px; }
+            th { background: #f8fafc; text-align: left; }
+            td.num { text-align: right; }
+            .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 24px; }
+            .card { border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; }
+            .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+            .brand .logo { width: 28px; height: 28px; }
+            .brand .name { font-weight: 800; letter-spacing: 0.5px; color: #114034; }
+            .brand .tagline { font-size: 12px; color: #16a34a; }
+            .footer { position: fixed; left: 32px; right: 32px; bottom: 12px; font-size: 11px; color: #666; border-top: 1px solid #e5e7eb; padding-top: 6px; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="text-align:right; margin-bottom: 8px;">
+            <button onclick="window.print()" style="padding:6px 10px;">Print</button>
+          </div>
+          <div class="brand">
+            <img src="/transparent.svg" class="logo" alt="ShelfLife+" />
+            <div>
+              <div class="name">SHELFLIFE+</div>
+              <div class="tagline">Smarter Transport, Fresher Harvests</div>
+            </div>
+          </div>
+          <h1>Scenario Summary</h1>
+          <div class="muted">Generated ${date}</div>
+
+          <h2>Overview</h2>
+          <div class="grid card">
+            <div><strong>Total Load</strong><br/>${getTotalQuantity()} units</div>
+            <div><strong>Utilization</strong><br/>${isFinite(utilization) ? utilization : 0}%</div>
+            <div><strong>Truck</strong><br/>${meta.truckQuantity} × ${meta.truckSize} (${meta.truckType})</div>
+            <div><strong>Best Time</strong><br/>${travelTimeLabel(meta.bestTravelTime)}</div>
+            <div style="grid-column: 1 / -1;"><strong>Status</strong><br/>${compatibilityStatus.text}</div>
+          </div>
+
+          <h2>Load Details</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Qty</th>
+                <th>Ethylene Prod.</th>
+                <th>Ethylene Sens.</th>
+                <th>Temp Range</th>
+                <th>Shelf Life (days)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="6" class="muted">No vegetables added</td></tr>'}
+            </tbody>
+          </table>
+
+          <div class="muted" style="margin-top:16px;">Prepared with ShelfLife+ simulator</div>
+          <div class="footer">© 2024 ShelfLife+ · Smarter Transport, Fresher Harvests</div>
+        </body>
+        </html>`;
+
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        setTimeout(() => {
+          try { win.focus(); win.print(); } catch {}
+        }, 400);
+        toast({ title: 'PDF ready', description: 'Use the print dialog to save as PDF.' });
+      } else {
+        toast({ title: 'Popup blocked', description: 'Allow popups to generate the PDF.' });
+      }
+    } catch (e) {
+      toast({ title: 'PDF export failed', description: 'Could not build the PDF report.' });
     }
   };
 
@@ -455,9 +616,16 @@ const Index = () => {
                   <BarChart3 className="w-5 h-5 text-fresh-green" />
                   <span className="text-sm text-muted-foreground">Powered by</span>
                   <span className="font-semibold text-fresh-green">AgriScience</span>
-                  <Button variant="outline" size="sm" onClick={shareScenario} className="ml-2">
-                    Share
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="ml-2">Export</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={exportScenarioCSV}>Download CSV</DropdownMenuItem>
+                      <DropdownMenuItem onClick={copyScenarioJSON}>Copy JSON</DropdownMenuItem>
+                      <DropdownMenuItem onClick={exportScenarioPDF}>Download PDF</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button variant="ghost" size="sm" onClick={resetScenario}>
                     Reset
                   </Button>
@@ -559,17 +727,67 @@ const Index = () => {
                           <option value="large">Large</option>
                         </select>
                       </div>
+                      <div className="flex items-center justify-between gap-2 col-span-2">
+                        <div>
+                          <label className="block text-sm text-muted-foreground mb-1">Auto Truck Quantity</label>
+                          <p className="text-xs text-muted-foreground">Compute trucks from total load and capacity</p>
+                        </div>
+                        <div>
+                          <input
+                            type="checkbox"
+                            className="accent-brand-forest w-5 h-5 align-middle"
+                            checked={meta.autoTruckQuantity}
+                            onChange={(e) => setMeta((m) => ({ ...m, autoTruckQuantity: e.target.checked }))}
+                          />
+                        </div>
+                      </div>
                       <div>
                         <label className="block text-sm text-muted-foreground mb-1">Truck Quantity</label>
                         <input
                           type="number"
                           min={1}
                           className="w-full border rounded-md p-2 bg-background"
-                          value={meta.truckQuantity}
+                          value={meta.autoTruckQuantity ? Math.max(1, Math.ceil(getTotalQuantity() / capacityBySize[meta.truckSize])) : meta.truckQuantity}
+                          disabled={meta.autoTruckQuantity}
                           onChange={(e) =>
                             setMeta((m) => ({ ...m, truckQuantity: Math.max(1, Number(e.target.value || 1)) }))
                           }
                         />
+                        {!meta.autoTruckQuantity && (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Recommended: {recommendedTruckCount} based on current load and {meta.truckSize} capacity.
+                            <button
+                              type="button"
+                              className="ml-2 underline text-brand-forest hover:text-brand-teal"
+                              onClick={() => setMeta((m) => ({ ...m, truckQuantity: recommendedTruckCount }))}
+                            >
+                              Use recommended
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-1">Route Duration (hours)</label>
+                        <input
+                          type="number"
+                          min={0.5}
+                          step={0.5}
+                          className="w-full border rounded-md p-2 bg-background"
+                          value={meta.routeDurationHours}
+                          onChange={(e) => setMeta((m) => ({ ...m, routeDurationHours: Math.max(0.5, Number(e.target.value || 0.5)) }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-muted-foreground mb-1">Ambient Day-Night Delta (°C)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          className="w-full border rounded-md p-2 bg-background"
+                          value={meta.ambientDeltaC}
+                          onChange={(e) => setMeta((m) => ({ ...m, ambientDeltaC: Math.max(0, Number(e.target.value || 0)) }))}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">Bigger delta favors night travel</p>
                       </div>
                     </div>
                     <div className="mt-4 text-sm text-muted-foreground">
@@ -584,9 +802,13 @@ const Index = () => {
                 vegetables={vegetables}
                 bestTravelTime={meta.bestTravelTime}
                 onChangeBestTravelTime={(val) => setMeta((m) => ({ ...m, bestTravelTime: val }))}
+                routeDurationHours={meta.routeDurationHours}
+                ambientDeltaC={meta.ambientDeltaC}
               />
             )}
-            {activeTab === 'layout' && <TruckVisualizer vegetables={vegetables} />}
+            {activeTab === 'layout' && (
+              <TruckVisualizer vegetables={vegetables} truckType={meta.truckType} truckSize={meta.truckSize} />
+            )}
             {activeTab === 'impact' && (
               <ImpactMetrics vegetables={vegetables} unitPrice={100} />
             )}

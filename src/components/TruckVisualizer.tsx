@@ -81,7 +81,7 @@ function optimizeLoading(vegetables: Vegetable[]): LoadZone[] {
   return zones;
 }
 
-export function TruckVisualizer({ vegetables }: TruckVisualizerProps) {
+export function TruckVisualizer({ vegetables, truckType = 'refrigerated', truckSize = 'medium' }: TruckVisualizerProps) {
   const loadZones = optimizeLoading(vegetables);
   
   if (vegetables.length === 0) {
@@ -103,7 +103,7 @@ export function TruckVisualizer({ vegetables }: TruckVisualizerProps) {
         {/* Truck outline */}
         <div className="absolute inset-2 border-2 border-muted-foreground/20 rounded-lg">
           <div className="absolute -top-3 left-4 bg-muted px-2 py-1 rounded text-xs text-muted-foreground font-medium">
-            Refrigerated Truck
+            {truckSize.charAt(0).toUpperCase() + truckSize.slice(1)} • {truckType.charAt(0).toUpperCase() + truckType.slice(1)} Truck
           </div>
         </div>
         

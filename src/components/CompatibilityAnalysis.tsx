@@ -25,6 +25,8 @@ interface CompatibilityAnalysisProps {
   // bestTravelTime and onChangeBestTravelTime kept for backward compatibility but no longer user-controlled
   bestTravelTime?: TravelTime;
   onChangeBestTravelTime?: (value: TravelTime) => void;
+  routeDurationHours?: number;
+  ambientDeltaC?: number;
 }
 
 // Compatibility logic based on ethylene production/sensitivity and temperature requirements
@@ -102,7 +104,7 @@ function getTransportRecommendation(vegetables: Vegetable[]): TransportRecommend
   };
 }
 
-export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morning', onChangeBestTravelTime }: CompatibilityAnalysisProps) {
+export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morning', onChangeBestTravelTime, routeDurationHours = 3, ambientDeltaC = 4 }: CompatibilityAnalysisProps) {
   const compatibilityResults = analyzeCompatibility(vegetables);
   const transportRec = getTransportRecommendation(vegetables);
 
@@ -114,6 +116,8 @@ export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morn
     const anyHighSensitive = vegs.some(v => v.ethyleneSensitivity === 'high');
     // Cooler periods reduce respiration and ethylene effects
     if (anyCoolSensitive || (anyHighEthylene && anyHighSensitive)) return 'night';
+    // Long routes and larger ambient swings favor cooler windows
+    if (routeDurationHours >= 6 || ambientDeltaC >= 5) return 'night';
     if (anyHighSensitive || anyHighEthylene) return 'early_morning';
     // Default to cooler start of day for most cases
     return 'early_morning';
