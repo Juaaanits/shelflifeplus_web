@@ -193,7 +193,7 @@ export const ChatWidget = ({ position = "right" }: { position?: Position }) => {
           "fixed bottom-24 z-50 w-80 max-w-[90vw] h-96 max-h-[65vh]",
           position === "left" ? "left-6" : position === "right" ? "right-6" : "left-6 sm:left-auto sm:right-6",
           "rounded-2xl border border-gray-200 bg-white shadow-2xl dark:bg-neutral-900 dark:border-neutral-800",
-          "overflow-hidden",
+          "overflow-hidden flex flex-col min-h-0",
           "transition-all duration-200 ease-out",
           open ? "opacity-100 translate-y-0 scale-100 animate-chat-in" : "pointer-events-none opacity-0 translate-y-2 scale-95 animate-chat-out"
         ].join(" ")}
@@ -218,7 +218,7 @@ export const ChatWidget = ({ position = "right" }: { position?: Position }) => {
         </div>
 
         {/* Messages */}
-        <div className="flex flex-col gap-2 p-3 h-[calc(100%-52px-54px)] overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-2 overscroll-contain">
           {messages.map((m) => (
             <div
               key={m.id}

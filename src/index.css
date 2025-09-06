@@ -13,6 +13,7 @@ Brand Colors: Navy (#0D1821), Forest Green (#14591D), Teal (#388697), Coral (#FF
     --background: 60 9% 98%;
     --foreground: 207 50% 17%;
 
+    --brand-mint: 113 44% 92%;
     --card: 0 0% 100%;
     --card-foreground: 207 50% 17%;
 
@@ -267,3 +268,32 @@ Brand Colors: Navy (#0D1821), Forest Green (#14591D), Teal (#388697), Coral (#FF
   box-shadow: 0 0 0 4px hsl(var(--fresh-green-glow));
   transition: box-shadow 0.6s ease-in-out;
 }
+
+/* Brand click animation (logo tap) */
+@keyframes brand-pop {
+  0% { transform: scale(1); box-shadow: var(--shadow-md); }
+  40% { transform: scale(1.06); box-shadow: var(--shadow-xl); }
+  70% { transform: scale(1.03); box-shadow: var(--shadow-lg); }
+  100% { transform: scale(1); box-shadow: var(--shadow-md); }
+}
+.brand-click-anim {
+  animation: brand-pop 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Navbar link underline slide-in + lift */
+.nav-anim {
+  position: relative;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.nav-anim::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 2px;
+  width: 0;
+  background: hsl(var(--fresh-green));
+  transition: width 0.22s ease;
+}
+.nav-anim:hover { transform: translateY(-2px); }
+.nav-anim:hover::after { width: 100%; }

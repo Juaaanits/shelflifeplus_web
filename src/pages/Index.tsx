@@ -30,6 +30,7 @@ const Index = () => {
   const [vegetables, setVegetables] = useState<Vegetable[]>([]);
   const [activeTab, setActiveTab] = useState<'input' | 'trucks' | 'analysis' | 'layout' | 'impact'>('input');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [brandAnim, setBrandAnim] = useState(false);
   const [meta, setMeta] = useState<ScenarioMeta>({
     truckType: 'refrigerated',
     truckSize: 'medium',
@@ -81,6 +82,15 @@ const Index = () => {
 
   const scrollToFeatures = () => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Cleanly return to the main page (top) without anchors/hashes
+  const goToTop = () => {
+    // Clear any query or hash from URL without reloading
+    const clean = new URL(window.location.origin + window.location.pathname);
+    window.history.replaceState({}, '', clean);
+    // Smooth scroll to top of page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Scenario persistence and sharing
@@ -421,9 +431,19 @@ const Index = () => {
       <nav className="bg-white/95 backdrop-blur-sm border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-20 lg:h-24">
-            {/* Logo - Enhanced with tagline */}
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-brand-forest rounded-xl shadow-md">
+            {/* Logo - Enhanced with tagline (click to go to top) */}
+            <div
+              className="flex items-center gap-4 cursor-pointer select-none"
+              onClick={() => {
+                setBrandAnim(true);
+                setTimeout(() => setBrandAnim(false), 460);
+                goToTop();
+              }}
+              role="link"
+              aria-label="Back to start"
+              title="Back to start"
+            >
+              <div className={["p-3 bg-[#E5F4E3] rounded-xl shadow-md", brandAnim ? "brand-click-anim" : ""].join(" ")}>
                 <img 
                   src="/transparent.svg" 
                   alt="ShelfLife+ Logo" 
@@ -442,9 +462,9 @@ const Index = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-8">
-              <a href="#features" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Features</a>
-              <a href="#demo-section" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Simulator</a>
-              <a href="#benefits" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Benefits</a>
+              <a href="#features" className="nav-anim text-muted-foreground hover:text-brand-forest font-medium text-base">Features</a>
+              <a href="#demo-section" className="nav-anim text-muted-foreground hover:text-brand-forest font-medium text-base">Simulator</a>
+              <a href="#benefits" className="nav-anim text-muted-foreground hover:text-brand-forest font-medium text-base">Benefits</a>
               <Button onClick={scrollToDemo} className="bg-brand-forest hover:bg-brand-teal text-white px-6 py-3 rounded-lg font-semibold shadow-lg">
                 Try Simulator <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -474,21 +494,21 @@ const Index = () => {
               <div className="flex flex-col space-y-3">
                 <a 
                   href="#features" 
-                  className="text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
+                  className="nav-anim text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Features
                 </a>
                 <a 
                   href="#demo-section" 
-                  className="text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
+                  className="nav-anim text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Simulator
                 </a>
                 <a 
                   href="#benefits" 
-                  className="text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
+                  className="nav-anim text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Benefits
@@ -511,7 +531,7 @@ const Index = () => {
       </nav>
 
       {/* Mobile-First Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-forest via-brand-forest to-brand-teal min-h-[85vh] flex items-center">
+      <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-brand-forest via-brand-forest to-brand-teal min-h-[85vh] flex items-center">
         {/* Subtle overlay for better text contrast */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
         
@@ -704,7 +724,13 @@ const Index = () => {
                   <span className="font-semibold text-fresh-green">AgriScience</span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="ml-2">Export</Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="ml-2 border-[#388697] text-[#388697] hover:bg-[#388697]/10"
+                      >
+                        Export
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={exportScenarioCSV}>Download CSV</DropdownMenuItem>
@@ -712,7 +738,12 @@ const Index = () => {
                       <DropdownMenuItem onClick={exportScenarioPDF}>Download PDF</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button variant="ghost" size="sm" onClick={resetScenario}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetScenario}
+                    className="bg-[#ff6663] hover:bg-[#ff5450] text-white"
+                  >
                     Reset
                   </Button>
                 </div>
@@ -984,9 +1015,13 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             {/* Company Info */}
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-fresh-green rounded-lg">
-                  <Leaf className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-[#E5F4E3] rounded-xl shadow-md">
+                  <img
+                    src="/transparent.svg"
+                    alt="ShelfLife+ Logo"
+                    className="w-6 h-6 object-contain"
+                  />
                 </div>
                 <div>
                   <span className="text-xl font-bold">SHELFLIFE+</span>
