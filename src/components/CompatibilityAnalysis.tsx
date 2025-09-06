@@ -22,6 +22,7 @@ type TravelTime = 'early_morning' | 'daytime' | 'evening' | 'night';
 
 interface CompatibilityAnalysisProps {
   vegetables: Vegetable[];
+  // bestTravelTime and onChangeBestTravelTime kept for backward compatibility but no longer user-controlled
   bestTravelTime?: TravelTime;
   onChangeBestTravelTime?: (value: TravelTime) => void;
 }
@@ -104,6 +105,21 @@ function getTransportRecommendation(vegetables: Vegetable[]): TransportRecommend
 export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morning', onChangeBestTravelTime }: CompatibilityAnalysisProps) {
   const compatibilityResults = analyzeCompatibility(vegetables);
   const transportRec = getTransportRecommendation(vegetables);
+
+  // Automatically determine best travel time based on combined factors
+  const computeBestTravelTime = (vegs: Vegetable[]): TravelTime => {
+    if (vegs.length === 0) return 'early_morning';
+    const anyCoolSensitive = vegs.some(v => v.idealTemp.max <= 10 || v.idealTemp.min <= 5);
+    const anyHighEthylene = vegs.some(v => v.ethyleneProduction === 'high');
+    const anyHighSensitive = vegs.some(v => v.ethyleneSensitivity === 'high');
+    // Cooler periods reduce respiration and ethylene effects
+    if (anyCoolSensitive || (anyHighEthylene && anyHighSensitive)) return 'night';
+    if (anyHighSensitive || anyHighEthylene) return 'early_morning';
+    // Default to cooler start of day for most cases
+    return 'early_morning';
+  };
+
+  const recommendedTravelTime = computeBestTravelTime(vegetables);
 
   if (vegetables.length === 0) {
     return (
@@ -196,23 +212,20 @@ export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morn
               </Badge>
             </div>
 
-            {/* Best Time to Travel control */}
+            {/* Best Time to Travel (auto) */}
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium">Best Time to Travel:</span>
-              <select
-                className="ml-2 text-sm border rounded-md p-1 bg-background"
-                value={bestTravelTime}
-                onChange={(e) => onChangeBestTravelTime?.(e.target.value as TravelTime)}
-              >
-                <option value="early_morning">Early Morning</option>
-                <option value="daytime">Daytime</option>
-                <option value="evening">Evening</option>
-                <option value="night">Night</option>
-              </select>
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {recommendedTravelTime === 'early_morning' && 'Early Morning'}
+                {recommendedTravelTime === 'daytime' && 'Daytime'}
+                {recommendedTravelTime === 'evening' && 'Evening'}
+                {recommendedTravelTime === 'night' && 'Night'}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground ml-1">(auto)</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Cooler periods (early morning/night) reduce heat stress and may lower spoilage risk.
+              Recommended based on temperature tolerances and ethylene sensitivity/production.
             </p>
           </div>
 
@@ -231,4 +244,3 @@ export function CompatibilityAnalysis({ vegetables, bestTravelTime = 'early_morn
     </div>
   );
 }
-

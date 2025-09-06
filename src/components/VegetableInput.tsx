@@ -13,7 +13,6 @@ export interface Vegetable {
   shelfLife: number; // days
 }
 
-// Vegetable database with biological properties
 // Vegetable database with biological properties (dummy data)
 const VEGETABLE_DATABASE: Record<string, Omit<Vegetable, 'id' | 'quantity'>> = {
   // --- Highland Vegetables ---

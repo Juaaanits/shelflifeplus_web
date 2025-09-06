@@ -200,21 +200,21 @@ const Index = () => {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-8">
               <a href="#features" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Features</a>
-              <a href="#demo-section" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Demo</a>
+              <a href="#demo-section" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Simulator</a>
               <a href="#benefits" className="text-muted-foreground hover:text-brand-forest font-medium text-base">Benefits</a>
               <Button onClick={scrollToDemo} className="bg-brand-forest hover:bg-brand-teal text-white px-6 py-3 rounded-lg font-semibold shadow-lg">
-                Try Demo <ArrowRight className="w-4 h-4 ml-2" />
+                Try Simulator <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
 
             {/* Mobile CTA + Menu */}
             <div className="flex items-center gap-2 lg:hidden">
                 <Button 
-                onClick={scrollToFeatures}
+                onClick={scrollToDemo}
                 size="sm"
                 className="bg-brand-forest hover:bg-brand-teal text-white px-4 py-2 text-sm font-semibold"
               >
-                Demo
+                Simulator
               </Button>
               <button
                 className="p-2 rounded-lg hover:bg-muted transition-smooth"
@@ -241,7 +241,7 @@ const Index = () => {
                   className="text-muted-foreground hover:text-fresh-green transition-smooth py-3 px-2 rounded-lg hover:bg-muted font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Interactive Demo
+                  Simulator
                 </a>
                 <a 
                   href="#benefits" 
@@ -258,7 +258,7 @@ const Index = () => {
                     }} 
                     className="w-full btn-primary"
                   >
-                    Start Free Demo <ArrowRight className="w-4 h-4 ml-2" />
+                    Start Free Simulator <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </div>
@@ -304,8 +304,8 @@ const Index = () => {
                   size="lg" 
                   className="bg-white text-brand-forest hover:bg-white/90 font-semibold shadow-lg w-full sm:w-auto"
                 >
-                  Try Demo Free <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                  Try Simulator Free <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
                 <Button 
                   onClick={scrollToFeatures}
                   size="lg"
@@ -418,12 +418,12 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Interactive Demo Section */}
+      {/* Simulator Section */}
       <section id="demo-section" className="py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Try the Interactive Demo
+              Try the Simulator
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Experience how ShelfLife+ optimizes your vegetable logistics
@@ -591,7 +591,9 @@ const Index = () => {
               />
             )}
             {activeTab === 'layout' && <TruckVisualizer vegetables={vegetables} />}
-            {activeTab === 'impact' && <ImpactMetrics vegetables={vegetables} />}
+            {activeTab === 'impact' && (
+              <ImpactMetrics vegetables={vegetables} unitPrice={100} />
+            )}
           </div>
         </div>
       </section>
@@ -658,8 +660,8 @@ const Index = () => {
                   size="lg" 
                   className="w-full bg-white text-fresh-green hover:bg-white/90 font-semibold"
                 >
-                  Try Free Demo <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
+                  Try Free Simulator <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
                 <Button 
                   size="lg"
                   className="w-full bg-white text-fresh-green hover:bg-white/90 font-semibold"
@@ -706,7 +708,7 @@ const Index = () => {
               <h4 className="font-semibold mb-4">Product</h4>
               <div className="space-y-2 text-sm text-muted">
                 <a href="#features" className="block hover:text-fresh-green transition-colors">Features</a>
-                <a href="#demo-section" className="block hover:text-fresh-green transition-colors">Demo</a>
+                <a href="#demo-section" className="block hover:text-fresh-green transition-colors">Simulator</a>
                 <a href="#benefits" className="block hover:text-fresh-green transition-colors">Benefits</a>
                 <a href="#" className="block hover:text-fresh-green transition-colors">Pricing</a>
               </div>

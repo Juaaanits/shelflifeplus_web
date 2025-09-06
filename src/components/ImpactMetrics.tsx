@@ -1,9 +1,10 @@
-import { TrendingDown, TrendingUp, Leaf, DollarSign, Clock, Package } from 'lucide-react';
+import { TrendingDown, TrendingUp, Leaf, Banknote, Clock, Package } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Vegetable } from './VegetableInput';
 
 interface ImpactMetricsProps {
   vegetables: Vegetable[];
+  unitPrice?: number; // price per unit in PHP
 }
 
 interface ImpactCalculation {
@@ -24,7 +25,7 @@ interface ImpactCalculation {
   };
 }
 
-function calculateImpact(vegetables: Vegetable[]): ImpactCalculation {
+function calculateImpact(vegetables: Vegetable[], unitCost: number): ImpactCalculation {
   if (vegetables.length === 0) {
     return {
       withoutShelfLife: { wastePercentage: 0, shelfLifeDays: 0, estimatedLoss: 0 },
@@ -64,8 +65,6 @@ function calculateImpact(vegetables: Vegetable[]): ImpactCalculation {
   const totalQuantity = vegetables.reduce((sum, veg) => sum + veg.quantity, 0);
   const avgShelfLife = vegetables.reduce((sum, veg) => sum + veg.shelfLife, 0) / vegetables.length;
   
-  // Calculate costs (assuming $2 per unit average)
-  const unitCost = 2;
   const baselineLoss = baselineWaste * unitCost;
   const optimizedLoss = optimizedWaste * unitCost;
   
@@ -88,8 +87,9 @@ function calculateImpact(vegetables: Vegetable[]): ImpactCalculation {
   };
 }
 
-export function ImpactMetrics({ vegetables }: ImpactMetricsProps) {
-  const impact = calculateImpact(vegetables);
+export function ImpactMetrics({ vegetables, unitPrice = 100 }: ImpactMetricsProps) {
+  const impact = calculateImpact(vegetables, unitPrice);
+  const currencySymbol = '₱';
   
   if (vegetables.length === 0) {
     return (
@@ -142,9 +142,9 @@ export function ImpactMetrics({ vegetables }: ImpactMetricsProps) {
                 <span className="text-sm text-muted-foreground">Estimated Loss:</span>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-incompatible-red">
-                    ${impact.withoutShelfLife.estimatedLoss.toFixed(2)}
+                    {currencySymbol}{impact.withoutShelfLife.estimatedLoss.toFixed(2)}
                   </span>
-                  <DollarSign className="w-4 h-4 text-incompatible-red" />
+                  <Banknote className="w-4 h-4 text-incompatible-red" />
                 </div>
               </div>
             </div>
@@ -182,9 +182,9 @@ export function ImpactMetrics({ vegetables }: ImpactMetricsProps) {
                 <span className="text-sm text-muted-foreground">Estimated Loss:</span>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-compatible-green">
-                    ${impact.withShelfLife.estimatedLoss.toFixed(2)}
+                    {currencySymbol}{impact.withShelfLife.estimatedLoss.toFixed(2)}
                   </span>
-                  <DollarSign className="w-4 h-4 text-compatible-green" />
+                  <Banknote className="w-4 h-4 text-compatible-green" />
                 </div>
               </div>
             </div>
@@ -216,10 +216,13 @@ export function ImpactMetrics({ vegetables }: ImpactMetricsProps) {
           
           <div className="text-center p-4 bg-card/60 rounded-lg border border-compatible-green/20">
             <div className="text-2xl font-bold text-compatible-green">
-              ${impact.savings.costSavings.toFixed(2)}
+              {currencySymbol}{impact.savings.costSavings.toFixed(2)}
             </div>
             <div className="text-sm text-muted-foreground">Cost Savings</div>
           </div>
+        </div>
+        <div className="mt-3 text-xs text-muted-foreground">
+          Assumption: {currencySymbol}{unitPrice.toFixed(2)} per unit
         </div>
       </Card>
     </div>
